@@ -1,0 +1,7 @@
+# ninja log v5
+312	33364	7444262890352429	CMakeFiles/main.dir/src/stb_image.cpp.obj	e46b63e56eee8df0
+181	34230	7444262886373591	CMakeFiles/main.dir/src/textrendering.cpp.obj	6bb828109bec1602
+103	34239	7444262936720116	CMakeFiles/main.dir/src/main.cpp.obj	20f644211e2dd7c0
+195	34242	7444262940483679	CMakeFiles/main.dir/src/tiny_obj_loader.cpp.obj	4442acf94429e821
+494	55124	7444263153425375	CMakeFiles/main.dir/src/glad.c.obj	79ff48ad1f5f5291
+55124	58828	7444263190626034	C:/Users/bruno/CLionProjects/FCG---Trabalho-Final/Laboratorio_5_Codigo_Fonte/bin/Debug/main.exe	4dc84bf7da892600
