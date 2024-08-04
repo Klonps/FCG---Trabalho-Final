@@ -5,7 +5,7 @@
 //    INF01047 Fundamentos de Computação Gráfica
 //               Prof. Eduardo Gastal
 //
-//                    TRABALHO FINAL
+//                   LABORATÓRIO 5
 //
 
 // Arquivos "headers" padrões de C podem ser incluídos em um
@@ -118,7 +118,7 @@ void PopMatrix(glm::mat4& M);
 void BuildTrianglesAndAddToVirtualScene(ObjModel*); // Constrói representação de um ObjModel como malha de triângulos para renderização
 void ComputeNormals(ObjModel* model); // Computa normais de um ObjModel, caso não existam.
 void LoadShadersFromFiles(); // Carrega os shaders de vértice e fragmento, criando um programa de GPU
-void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
+GLuint LoadTextureImage(const char* filename); // Função que carrega imagens de textura
 void DrawVirtualObject(const char* object_name); // Desenha um objeto armazenado em g_VirtualScene
 GLuint LoadShader_Vertex(const char* filename);   // Carrega um vertex shader
 GLuint LoadShader_Fragment(const char* filename); // Carrega um fragment shader
@@ -222,6 +222,13 @@ GLint g_projection_uniform;
 GLint g_object_id_uniform;
 GLint g_bbox_min_uniform;
 GLint g_bbox_max_uniform;
+//TEXTURAS
+GLint terra;
+GLint terra2;
+GLint azul;
+GLint chao;
+GLint ceu;
+GLint horizon;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -300,8 +307,12 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
-    LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    terra = LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
+    terra2 = LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    azul = LoadTextureImage("../../data/azul.jpg");
+    chao = LoadTextureImage("../../data/chao.jpg");
+    ceu = LoadTextureImage("../../data/ceu.jpg");
+
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -319,6 +330,10 @@ int main(int argc, char* argv[])
     ObjModel cenariomodel("../../data/cenario.obj");
     ComputeNormals(&cenariomodel);
     BuildTrianglesAndAddToVirtualScene(&cenariomodel);
+
+    ObjModel personagemmodel("../../data/personagem.obj");
+    ComputeNormals(&personagemmodel);
+    BuildTrianglesAndAddToVirtualScene(&personagemmodel);
 
     if ( argc > 1 )
     {
@@ -419,6 +434,7 @@ int main(int argc, char* argv[])
         #define BUNNY  1
         #define PLANE  2
         #define CENARIO  3
+        #define PERSONAGEM  4
 
         /*// Desenhamos o modelo da esfera
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -428,13 +444,14 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");*/
-
         // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,-0.85f,0.0f) * Matrix_Scale(0.2f, 0.2f, 0.2f);
-              //* Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
+        /*model = Matrix_Translate(0.0f,-0.63f,0.0f)* Matrix_Scale(0.2f, 0.2f, 0.2f);
+               Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, azul);
+        DrawVirtualObject("the_bunny");*/
 
 
         // Desenhamos o plano do chão
@@ -442,22 +459,26 @@ int main(int argc, char* argv[])
         model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Scale(3.0f, 3.0f, 3.0f); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, chao);
         DrawVirtualObject("the_plane");
 
         model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(3.0f, 3.0f,0.0f)
-                * Matrix_Rotate_Z(PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f);
+                * Matrix_Rotate_Z(-3*PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, ceu);
         DrawVirtualObject("the_plane");
 
         model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(-3.0f, 3.0f,0.0f)
-                * Matrix_Rotate_Z(PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f);
+                * Matrix_Rotate_Z(3*PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
         model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(0.0f, 3.0f,3.0f)
-                * Matrix_Rotate_Z(PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f) * Matrix_Rotate_X(PI/2);
+                * Matrix_Rotate_Z(PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f) * Matrix_Rotate_X(3*PI/2);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
@@ -467,6 +488,18 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+
+        model = Matrix_Translate(0.0f,5.0f,0.0f) * Matrix_Scale(3.0f, 3.0f, 3.0f) * Matrix_Rotate_X(PI); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, PLANE);
+        DrawVirtualObject("the_plane");
+
+        // desenho do personagem
+        model = Matrix_Translate(0.0f,-0.8f,0.0f)* Matrix_Scale(0.03f, 0.03f, 0.03f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, PERSONAGEM);
+        DrawVirtualObject("personagem");
+
 
 
         // Desenho do cenario
@@ -516,7 +549,7 @@ int main(int argc, char* argv[])
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
-void LoadTextureImage(const char* filename)
+GLuint LoadTextureImage(const char* filename)
 {
     printf("Carregando imagem \"%s\"... ", filename);
 
@@ -565,6 +598,7 @@ void LoadTextureImage(const char* filename)
     stbi_image_free(data);
 
     g_NumLoadedTextures += 1;
+    return texture_id;
 }
 
 // Função que desenha um objeto armazenado em g_VirtualScene. Veja definição

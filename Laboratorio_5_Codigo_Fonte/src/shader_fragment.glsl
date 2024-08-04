@@ -23,6 +23,7 @@ uniform mat4 projection;
 #define BUNNY  1
 #define PLANE  2
 #define CENARIO 3
+#define PERSONAGEM 4
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -129,6 +130,21 @@ void main()
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         //U = texcoords.x;
         //V = texcoords.y;
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = (position_model.x - minx) / (maxx - minx);
+        V = (position_model.y - miny) / (maxy - miny);
+    }
+    else if ( object_id == PERSONAGEM)
+    {
 
         float minx = bbox_min.x;
         float maxx = bbox_max.x;
