@@ -24,6 +24,7 @@ uniform mat4 projection;
 #define PLANE  2
 #define CENARIO 3
 #define PERSONAGEM 4
+#define ZOMBIE 5
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -34,6 +35,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -158,6 +160,21 @@ void main()
         U = (position_model.x - minx) / (maxx - minx);
         V = (position_model.y - miny) / (maxy - miny);
     }
+    else if ( object_id == ZOMBIE)
+    {
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = (position_model.x - minx) / (maxx - minx);
+        V = (position_model.y - miny) / (maxy - miny);
+    }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     /*vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
@@ -177,6 +194,13 @@ void main()
     float lambert = max(0,dot(n,l));
 
     color.rgb = Kd0 * (lambert + 0.01);
+
+    if (object_id == ZOMBIE) {
+        vec3 kd3 = texture(TextureImage3, vec2(U,V)).rgb;
+        color.rgb = kd3 * (lambert + 0.01);
+    }
+
+
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
     // necessário:

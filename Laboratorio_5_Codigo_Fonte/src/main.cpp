@@ -229,6 +229,21 @@ GLint azul;
 GLint chao;
 GLint ceu;
 GLint horizon;
+GLint zombie;
+//MOVIMENTO
+float personagem_x = 0.0f;
+float personagem_y = -0.8f;
+float personagem_z = 0.0f;
+
+struct Position {
+    float x;
+    float y;
+    float z;
+};
+void UpdateCharacterPosition(Position &pos, int key, float speed);
+
+Position personagem_pos = {0.0f, -0.8f, 0.0f};
+float p_AngleY=0;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -310,6 +325,7 @@ int main(int argc, char* argv[])
     terra = LoadTextureImage("../../data/tc-earth_daymap_surface.jpg");      // TextureImage0
     terra2 = LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     azul = LoadTextureImage("../../data/azul.jpg");
+    zombie = LoadTextureImage("../../data/zombie.png"); // TextureImage3
     chao = LoadTextureImage("../../data/chao.jpg");
     ceu = LoadTextureImage("../../data/ceu.jpg");
 
@@ -334,6 +350,10 @@ int main(int argc, char* argv[])
     ObjModel personagemmodel("../../data/personagem.obj");
     ComputeNormals(&personagemmodel);
     BuildTrianglesAndAddToVirtualScene(&personagemmodel);
+
+    ObjModel zombiemodel("../../data/zombie.obj");
+    ComputeNormals(&zombiemodel);
+    BuildTrianglesAndAddToVirtualScene(&zombiemodel);
 
     if ( argc > 1 )
     {
@@ -399,7 +419,7 @@ int main(int argc, char* argv[])
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -10.0f; // Posição do "far plane"
+        float farplane  = -20.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -435,6 +455,7 @@ int main(int argc, char* argv[])
         #define PLANE  2
         #define CENARIO  3
         #define PERSONAGEM  4
+        #define ZOMBIE  5
 
         /*// Desenhamos o modelo da esfera
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -456,49 +477,72 @@ int main(int argc, char* argv[])
 
         // Desenhamos o plano do chão
         //model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Scale(3.0f, 3.0f, 3.0f); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
+        model = Matrix_Translate(0.0f,-0.85f,0.0f)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, chao);
         DrawVirtualObject("the_plane");
 
-        model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(3.0f, 3.0f,0.0f)
-                * Matrix_Rotate_Z(-3*PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f);
+        model = Matrix_Translate(0.0f,-0.85f,0.0f)
+                * Matrix_Translate(6.0f, 6.0f,0.0f)
+                * Matrix_Rotate_Z(-3*PI/2)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ceu);
         DrawVirtualObject("the_plane");
 
-        model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(-3.0f, 3.0f,0.0f)
-                * Matrix_Rotate_Z(3*PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f);
+        model = Matrix_Translate(0.0f,-0.85f,0.0f)
+                * Matrix_Translate(-6.0f, 6.0f,0.0f)
+                * Matrix_Rotate_Z(3*PI/2)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-        model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(0.0f, 3.0f,3.0f)
-                * Matrix_Rotate_Z(PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f) * Matrix_Rotate_X(3*PI/2);
+        model = Matrix_Translate(0.0f,-0.85f,0.0f)
+                * Matrix_Translate(0.0f, 6.0f,6.0f)
+                * Matrix_Rotate_Z(PI/2)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f) * Matrix_Rotate_X(3*PI/2);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-        model = Matrix_Translate(0.0f,-0.85f,0.0f) * Matrix_Translate(0.0f, 3.0f,  -3.0f)
-                * Matrix_Rotate_Z(PI/2) * Matrix_Scale(3.0f, 3.0f, 3.0f) * Matrix_Rotate_X(PI/2);
+        model = Matrix_Translate(0.0f,-0.85f,0.0f)
+                * Matrix_Translate(0.0f, 6.0f,  -6.0f)
+                * Matrix_Rotate_Z(PI/2)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f)
+                * Matrix_Rotate_X(PI/2);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-        model = Matrix_Translate(0.0f,5.0f,0.0f) * Matrix_Scale(3.0f, 3.0f, 3.0f) * Matrix_Rotate_X(PI); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
+        model = Matrix_Translate(0.0f,10.0f,0.0f)
+                * Matrix_Scale(6.0f, 6.0f, 6.0f)
+                * Matrix_Rotate_X(PI); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
         // desenho do personagem
-        model = Matrix_Translate(0.0f,-0.8f,0.0f)* Matrix_Scale(0.03f, 0.03f, 0.03f);
+        model = Matrix_Translate(personagem_pos.x, personagem_pos.y, personagem_pos.z)
+                * Matrix_Scale(0.03f, 0.03f, 0.03f)
+                * Matrix_Rotate_Y(p_AngleY);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, azul);
         glUniform1i(g_object_id_uniform, PERSONAGEM);
         DrawVirtualObject("personagem");
+
+        model = Matrix_Translate(0.5f, -1.05f, 0.0f)
+                * Matrix_Scale(0.004f, 0.004f, 0.004f)
+                * Matrix_Rotate_Y(p_AngleY);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, ZOMBIE);
+        DrawVirtualObject("zombie");
 
 
 
@@ -682,6 +726,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 
@@ -1303,6 +1348,46 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
     }
+
+    // Lógica de movimento do personagem
+
+    const float movimento_velocidade = 0.1f;
+
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
+    {
+        UpdateCharacterPosition(personagem_pos, key, movimento_velocidade);
+    }
+
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+    {
+        p_AngleY -= delta;
+    }
+
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+    {
+        p_AngleY += delta;
+    }
+}
+
+void UpdateCharacterPosition(Position &pos, int key, float speed)
+{
+    switch (key)
+    {
+        case GLFW_KEY_W:
+            pos.z -= speed;
+            break;
+        case GLFW_KEY_S:
+            pos.z += speed;
+            break;
+        case GLFW_KEY_A:
+            pos.x -= speed;
+            break;
+        case GLFW_KEY_D:
+            pos.x += speed;
+            break;
+        default:
+            break;
+    }
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1610,4 +1695,3 @@ void PrintObjModelInfo(ObjModel* model)
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
-
