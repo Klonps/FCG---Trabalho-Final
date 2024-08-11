@@ -29,6 +29,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
+#include <cfloat>
 
 // Headers das bibliotecas OpenGL
 #include <glad/glad.h>   // Criação de contexto OpenGL 3.3
@@ -47,6 +48,7 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "collisions.h"
 
 #define PI 3.14159265359
 
@@ -536,6 +538,7 @@ int main(int argc, char* argv[])
         glBindTexture(GL_TEXTURE_2D, azul);
         glUniform1i(g_object_id_uniform, PERSONAGEM);
         DrawVirtualObject("personagem");
+        AABB personagemAABB = CalculateAABB(personagemmodel, model);
 
         model = Matrix_Translate(0.5f, -1.05f, 0.0f)
                 * Matrix_Scale(0.004f, 0.004f, 0.004f)
@@ -543,21 +546,12 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, ZOMBIE);
         DrawVirtualObject("zombie");
+        AABB zombieAABB = CalculateAABB(zombiemodel, model);
 
+        if (CheckCollision(personagemAABB, zombieAABB)) {
+            printf("Colisao detectada entre o personagem e o zumbi!");
+        }
 
-
-        // Desenho do cenario
-        /*model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        //model = Matrix_Translate(0.0f,0.0f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, CENARIO);
-        DrawVirtualObject("the_cenario");*/
-
-        // Desenhamos o cenario
-        /*model = Matrix_Translate(0.0f,-1.1f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, PLANE);
-        DrawVirtualObject("the_cenario");*/
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
