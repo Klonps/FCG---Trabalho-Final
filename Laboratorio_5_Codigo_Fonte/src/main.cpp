@@ -250,6 +250,10 @@ float p_AngleY=0;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
+bool colidiu = false;
+std::vector<AABB> objects;
+AABB personagemAABB;
+
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -279,7 +283,7 @@ int main(int argc, char* argv[])
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - 550170 - Bruno Tadielo Ruschel", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "INF01047 - Zombies", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -459,23 +463,6 @@ int main(int argc, char* argv[])
         #define PERSONAGEM  4
         #define ZOMBIE  5
 
-        /*// Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");*/
-        // Desenhamos o modelo do coelho
-        /*model = Matrix_Translate(0.0f,-0.63f,0.0f)* Matrix_Scale(0.2f, 0.2f, 0.2f);
-               Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, azul);
-        DrawVirtualObject("the_bunny");*/
-
 
         // Desenhamos o plano do chão
         //model = Matrix_Translate(0.0f,-1.1f,0.0f);
@@ -496,6 +483,8 @@ int main(int argc, char* argv[])
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ceu);
         DrawVirtualObject("the_plane");
+        AABB paredeAABB = CalculateAABB(planemodel, model);
+        objects.push_back(paredeAABB);
 
         model = Matrix_Translate(0.0f,-0.85f,0.0f)
                 * Matrix_Translate(-6.0f, 6.0f,0.0f)
@@ -504,6 +493,8 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+        AABB parede1AABB = CalculateAABB(planemodel, model);
+        objects.push_back(parede1AABB);
 
         model = Matrix_Translate(0.0f,-0.85f,0.0f)
                 * Matrix_Translate(0.0f, 6.0f,6.0f)
@@ -512,6 +503,8 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+        AABB parede2AABB = CalculateAABB(planemodel, model);
+        objects.push_back(parede2AABB);
 
         model = Matrix_Translate(0.0f,-0.85f,0.0f)
                 * Matrix_Translate(0.0f, 6.0f,  -6.0f)
@@ -521,6 +514,8 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+        AABB parede3AABB = CalculateAABB(planemodel, model);
+        objects.push_back(CalculateAABB(planemodel, model));
 
         model = Matrix_Translate(0.0f,10.0f,0.0f)
                 * Matrix_Scale(6.0f, 6.0f, 6.0f)
@@ -528,6 +523,8 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+        AABB parede4AABB = CalculateAABB(planemodel, model);
+        objects.push_back(CalculateAABB(planemodel, model));
 
         // desenho do personagem
         model = Matrix_Translate(personagem_pos.x, personagem_pos.y, personagem_pos.z)
@@ -538,7 +535,7 @@ int main(int argc, char* argv[])
         glBindTexture(GL_TEXTURE_2D, azul);
         glUniform1i(g_object_id_uniform, PERSONAGEM);
         DrawVirtualObject("personagem");
-        AABB personagemAABB = CalculateAABB(personagemmodel, model);
+        personagemAABB = CalculateAABB(personagemmodel, model);
 
         model = Matrix_Translate(0.5f, -1.05f, 0.0f)
                 * Matrix_Scale(0.004f, 0.004f, 0.004f)
@@ -547,9 +544,25 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, ZOMBIE);
         DrawVirtualObject("zombie");
         AABB zombieAABB = CalculateAABB(zombiemodel, model);
+        objects.push_back(zombieAABB);
 
         if (CheckCollision(personagemAABB, zombieAABB)) {
             printf("Colisao detectada entre o personagem e o zumbi!");
+            colidiu = true;
+        }
+
+        /*if (CheckCollision(personagemAABB, parede1AABB) || CheckCollision(personagemAABB, paredeAABB)
+           || CheckCollision(personagemAABB, parede2AABB) || CheckCollision(personagemAABB, parede3AABB)
+           || CheckCollision(personagemAABB, parede4AABB)){
+            printf("Colisao detectada entre o personagem e parede!");
+            colidiu = true;
+           }*/
+
+        for(const AABB& obj : objects) {
+            if(CheckCollision(personagemAABB, obj)) {
+                printf("Colisao detectada entre o personagem e parede!");
+                //colidiu = true;
+            }
         }
 
 
@@ -1365,22 +1378,51 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
 void UpdateCharacterPosition(Position &pos, int key, float speed)
 {
+    // Salva a posição anterior do personagem
+    Position prevPos = pos;
+
     switch (key)
     {
         case GLFW_KEY_W:
-            pos.z -= speed;
+            if(!colidiu) {
+                pos.z -= speed;
+                colidiu = false;
+            }
             break;
         case GLFW_KEY_S:
-            pos.z += speed;
+            if(!colidiu) {
+                pos.z += speed;
+                colidiu = false;
+            }
             break;
         case GLFW_KEY_A:
-            pos.x -= speed;
+            if(!colidiu) {
+                pos.x -= speed;
+                colidiu = false;
+            }
             break;
         case GLFW_KEY_D:
-            pos.x += speed;
+            if(!colidiu) {
+                pos.x += speed;
+                colidiu = false;
+            }
             break;
         default:
             break;
+    }
+
+    // Calcula a nova AABB do personagem com a nova posição
+    AABB newCharacterAABB = personagemAABB;
+    newCharacterAABB.min += glm::vec3(pos.x - prevPos.x, pos.y - prevPos.y, pos.z - prevPos.z);
+    newCharacterAABB.max += glm::vec3(pos.x - prevPos.x, pos.y - prevPos.y, pos.z - prevPos.z);
+
+    // Verifica colisão com cada objeto estático
+    for (const AABB& obj : objects) {
+        if (CheckCollision(newCharacterAABB, obj)) {
+            // Colisão detectada, reverter a posição do personagem
+            pos = prevPos;
+            break;
+        }
     }
 }
 
