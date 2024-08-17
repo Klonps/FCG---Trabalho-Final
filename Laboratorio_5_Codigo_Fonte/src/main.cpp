@@ -248,6 +248,7 @@ struct Position
 void UpdateCharacterPosition(Position &pos, int key, float speed);
 
 Position personagem_pos = {0.0f, -0.8f, 0.0f};
+Position zombie_pos = {4.0f, -1.05f, 4.0f};
 float p_AngleY=0;
 
 // Número de texturas carregadas pela função LoadTextureImage()
@@ -275,6 +276,20 @@ bool g_SKeyPressed = false;
 bool g_DKeyPressed = false;
 
 glm::vec4 prevPos;
+
+struct BezierCurve {
+    glm::vec3 P0, P1, P2, P3;
+};
+
+std::vector<BezierCurve> curves;
+
+float t = 0.0f;
+glm::vec3 calculateBezierPoint(float t, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3);
+glm::vec3 calculateDynamicControlPoint(glm::vec3 start, glm::vec3 end);
+void UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition);
+
+int currentCurveIndex = 0; // índice da curva atual
+float speed = 0.05f;
 
 int main(int argc, char* argv[])
 {
@@ -400,10 +415,12 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    double lastFrameTime = glfwGetTime();
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
-
+        double currentFrameTime = glfwGetTime();
 
         prevPos = personagem;
         if (g_WKeyPressed)
@@ -534,16 +551,15 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
 
-#define SPHERE 0
-#define BUNNY  1
-#define PLANE  2
-#define CENARIO  3
-#define PERSONAGEM  4
-#define ZOMBIE  5
+        #define SPHERE 0
+        #define BUNNY  1
+        #define PLANE  2
+        #define CENARIO  3
+        #define PERSONAGEM  4
+        #define ZOMBIE  5
 
 
         // Desenhamos o plano do chão
-        //model = Matrix_Translate(0.0f,-1.1f,0.0f);
         model = Matrix_Translate(0.0f,-0.85f,0.0f)
                 * Matrix_Scale(6.0f, 6.0f, 6.0f); //* Matrix_Scale(10.0f, 10.0f, 10.0f);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -615,7 +631,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("personagem");
         personagemAABB = CalculateAABB(personagemmodel, model);
 
-        model = Matrix_Translate(0.5f, -1.05f, 0.0f)
+        model = Matrix_Translate(zombie_pos.x, -1.05f, zombie_pos.z)
                 * Matrix_Scale(0.004f, 0.004f, 0.004f)
                 * Matrix_Rotate_Y(p_AngleY);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -624,28 +640,15 @@ int main(int argc, char* argv[])
         AABB zombieAABB = CalculateAABB(zombiemodel, model);
         objects.push_back(zombieAABB);
 
-        if (CheckCollision(personagemAABB, zombieAABB))
-        {
-            //printf("Colisao detectada entre o personagem e o zumbi!");
-            colidiu = true;
+        if (CheckCollision(personagemAABB, zombieAABB)) {
+            printf("Colisao detectada entre o personagem e o zumbi!");
+            //colidiu = true;
         }
 
-        /*if (CheckCollision(personagemAABB, parede1AABB) || CheckCollision(personagemAABB, paredeAABB)
-           || CheckCollision(personagemAABB, parede2AABB) || CheckCollision(personagemAABB, parede3AABB)
-           || CheckCollision(personagemAABB, parede4AABB)){
-            printf("Colisao detectada entre o personagem e parede!");
-            colidiu = true;
-           }*/
+        double deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
 
-        for(const AABB& obj : objects)
-        {
-            if(CheckCollision(personagemAABB, obj))
-            {
-                //printf("Colisao detectada entre o personagem e parede!");
-                //colidiu = true;
-            }
-        }
-
+        UpdateZombiePosition(deltaTime, {personagem.x, personagem.y, personagem.z});
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1870,7 +1873,54 @@ void PrintObjModelInfo(ObjModel* model)
     }
 }
 
+glm::vec3 calculateBezierPoint(float t, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3) {
+    float u = 1.0f - t;
+    float tt = t * t;
+    float uu = u * u;
+    float uuu = uu * u;
+    float ttt = tt * t;
 
+    glm::vec3 point = uuu * P0;    // (1-t)^3 * P0
+    point += 3 * uu * t * P1;      // 3 * (1-t)^2 * t * P1
+    point += 3 * u * tt * P2;      // 3 * (1-t) * t^2 * P2
+    point += ttt * P3;             // t^3 * P3
+
+    return point;
+}
+
+glm::vec3 calculateDynamicControlPoint(glm::vec3 start, glm::vec3 end) {
+    // ponto de controle intermediário
+    glm::vec3 controlPoint = (start + end) / 2.0f;
+
+    // ajuste p/ suavizar a curva
+    controlPoint.y += 5.0f;
+
+    return controlPoint;
+}
+
+void UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition) {
+    // P0 é a posição do zumbi
+    glm::vec3 P0 = {zombie_pos.x, zombie_pos.y, zombie_pos.z};
+
+    // P3 é a posição do personagem
+    glm::vec3 P3 = playerPosition;
+
+    glm::vec3 P1 = calculateDynamicControlPoint(P0, P3);
+    glm::vec3 P2 = calculateDynamicControlPoint(P0, P3);
+
+    static float t = 0.0f;
+    float speed = 0.0002f;
+    t += speed * deltaTime;
+
+    if (t > 1.0f) {
+        t = 0.0f; // reinicia o tempo
+    }
+
+    glm::vec3 newPosition = calculateBezierPoint(t, P0, P1, P2, P3);
+
+    // atualiza a posição do zumbi
+    zombie_pos = {newPosition.x, newPosition.y, newPosition.z};
+}
 
 
 
