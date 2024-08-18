@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <stdlib.h>
 
 // Headers abaixo são específicos de C++
 #include <map>
@@ -249,6 +250,7 @@ void UpdateCharacterPosition(Position &pos, int key, float speed);
 
 Position personagem_pos = {0.0f, -0.8f, 0.0f};
 Position zombie_pos = {4.0f, -1.05f, 4.0f};
+glm::vec3 zombie2_pos = {-4.0f, -1.05f, -4.0f};
 float p_AngleY=0;
 
 // Número de texturas carregadas pela função LoadTextureImage()
@@ -257,6 +259,7 @@ GLuint g_NumLoadedTextures = 0;
 bool colidiu = false;
 
 std::vector<AABB> objects;
+std::vector<AABB> zombies_aabbs;
 AABB personagemAABB;
 
 //CAMERAS
@@ -291,8 +294,23 @@ void UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition);
 int currentCurveIndex = 0; // índice da curva atual
 float speed = 0.05f;
 
+std::vector<glm::vec3> zombiePosition;
+
+glm::vec3 UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition, glm::vec3 zombiePosition);
+glm::vec3 generateRandomPoint ();
+glm::vec3 UpdateRandomZombiePosition(float deltaTime, glm::vec3 zombiePosition);
+
+
 int main(int argc, char* argv[])
 {
+
+    zombiePosition.push_back({4.0f, -1.05f, 4.0f});
+    zombiePosition.push_back({-4.0f, -1.05f, -4.0f});
+    zombiePosition.push_back({-4.0f, -1.05f, 4.0f});
+    zombiePosition.push_back({4.0f, -1.05f, -4.0f});
+
+    srand (time(NULL));
+
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
     // sistema operacional, onde poderemos renderizar com OpenGL.
     int success = glfwInit();
@@ -631,7 +649,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("personagem");
         personagemAABB = CalculateAABB(personagemmodel, model);
 
-        model = Matrix_Translate(zombie_pos.x, -1.05f, zombie_pos.z)
+        /*model = Matrix_Translate(zombie_pos.x, -1.05f, zombie_pos.z)
                 * Matrix_Scale(0.004f, 0.004f, 0.004f)
                 * Matrix_Rotate_Y(p_AngleY);
         glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -640,15 +658,50 @@ int main(int argc, char* argv[])
         AABB zombieAABB = CalculateAABB(zombiemodel, model);
         objects.push_back(zombieAABB);
 
-        if (CheckCollision(personagemAABB, zombieAABB)) {
+        model = Matrix_Translate(zombie2_pos.x, -1.05f, zombie2_pos.z)
+                * Matrix_Scale(0.004f, 0.004f, 0.004f)
+                * Matrix_Rotate_Y(p_AngleY);
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, ZOMBIE);
+        DrawVirtualObject("zombie");
+        AABB zombie2AABB = CalculateAABB(zombiemodel, model);
+        objects.push_back(zombie2AABB);*/
+
+        for(int i = 0; i < 4; i++) {
+            model = Matrix_Translate(zombiePosition[i].x, -1.05f, zombiePosition[i].z)
+                * Matrix_Scale(0.004f, 0.004f, 0.004f)
+                * Matrix_Rotate_Y(p_AngleY);
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(g_object_id_uniform, ZOMBIE);
+            DrawVirtualObject("zombie");
+            AABB zombieAABB = CalculateAABB(zombiemodel, model);
+
+            if (CheckCollision(personagemAABB, zombieAABB)) {
+                printf("Colisao detectada entre o personagem e o zumbi!");
+                return 0;
+            }
+
+            /*double deltaTime = currentFrameTime - lastFrameTime;
+            lastFrameTime = currentFrameTime;
+            zombiePosition[i] = UpdateZombiePosition2(deltaTime, {personagem.x, personagem.y, personagem.z}, zombiePosition[i]);*/
+        }
+
+        /*if (CheckCollision(personagemAABB, zombieAABB)) {
             printf("Colisao detectada entre o personagem e o zumbi!");
             //colidiu = true;
-        }
+        }*/
+
 
         double deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-        UpdateZombiePosition(deltaTime, {personagem.x, personagem.y, personagem.z});
+        //UpdateZombiePosition(deltaTime, {personagem.x, personagem.y, personagem.z});
+        //glm::vec3 newPosition = UpdateZombiePosition2(deltaTime, {personagem.x, personagem.y, personagem.z}, zombiePosition[0]);
+
+        zombiePosition[0] = UpdateZombiePosition(deltaTime, {personagem.x, personagem.y, personagem.z}, zombiePosition[0]);
+        zombiePosition[1] = UpdateZombiePosition(deltaTime, {personagem.x, personagem.y, personagem.z}, zombiePosition[1]);
+        zombiePosition[2] = UpdateRandomZombiePosition(deltaTime, zombiePosition[2]);
+        zombiePosition[3] = UpdateRandomZombiePosition(deltaTime, zombiePosition[3]);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1553,6 +1606,12 @@ void UpdateCharacterPosition(Position &pos, int key, float speed)
             break;
         }
     }
+    for (const AABB& zombie : zombies_aabbs) {
+        if (CheckCollision(newCharacterAABB, zombie)) {
+            break;
+        }
+    }
+
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1898,7 +1957,7 @@ glm::vec3 calculateDynamicControlPoint(glm::vec3 start, glm::vec3 end) {
     return controlPoint;
 }
 
-void UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition) {
+/*void UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition) {
     // P0 é a posição do zumbi
     glm::vec3 P0 = {zombie_pos.x, zombie_pos.y, zombie_pos.z};
 
@@ -1920,9 +1979,60 @@ void UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition) {
 
     // atualiza a posição do zumbi
     zombie_pos = {newPosition.x, newPosition.y, newPosition.z};
+}*/
+
+glm::vec3 UpdateZombiePosition(float deltaTime, glm::vec3 playerPosition, glm::vec3 zombiePosition) {
+    // P0 é a posição do zumbi
+    glm::vec3 P0 = zombiePosition;
+
+    // P3 é a posição do personagem
+    glm::vec3 P3 = playerPosition;
+
+    glm::vec3 P1 = calculateDynamicControlPoint(P0, P3);
+    glm::vec3 P2 = calculateDynamicControlPoint(P0, P3);
+
+    static float t = 0.0f;
+    float speed = 0.0002f;
+    t += speed * deltaTime;
+
+    if (t > 1.0f) {
+        t = 0.0f; // reinicia o tempo
+    }
+
+    glm::vec3 newPosition = calculateBezierPoint(t, P0, P1, P2, P3);
+
+    // atualiza a posição do zumbi
+    //zombie_pos = {newPosition.x, newPosition.y, newPosition.z};
+    return newPosition;
 }
 
+glm::vec3 generateRandomPoint () {
+    return {(rand()% 8)-4, -1.05f, (rand()% 8)-4};
+}
 
+glm::vec3 UpdateRandomZombiePosition(float deltaTime, glm::vec3 zombiePosition) {
+    // P0 é a posição do zumbi
+    glm::vec3 P0 = zombiePosition;
+
+    glm::vec3 P3= generateRandomPoint();
+
+    glm::vec3 P1 = calculateDynamicControlPoint(P0, P3);
+    glm::vec3 P2 = calculateDynamicControlPoint(P0, P3);
+
+    static float t = 0.0f;
+    float speed = 0.0002f;
+    t += speed * deltaTime;
+
+    if (t > 1.0f) {
+        t = 0.0f; // reinicia o tempo
+    }
+
+    glm::vec3 newPosition = calculateBezierPoint(t, P0, P1, P2, P3);
+
+    // atualiza a posição do zumbi
+    //zombie_pos = {newPosition.x, newPosition.y, newPosition.z};
+    return newPosition;
+}
 
 AABB CalculateAABB(const ObjModel& model, const glm::mat4& transform)
 {
@@ -1956,4 +2066,5 @@ bool CheckCollision(const AABB& a, const AABB& b)
 }
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
+
 // vim: set spell spelllang=pt_br :
