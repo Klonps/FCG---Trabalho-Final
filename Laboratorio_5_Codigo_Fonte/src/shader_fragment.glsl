@@ -195,9 +195,24 @@ void main()
 
     color.rgb = Kd0 * (lambert + 0.01);
 
+    // modelo de iluminação Blinn-Phong
     if (object_id == ZOMBIE) {
-        vec3 kd3 = texture(TextureImage3, vec2(U,V)).rgb;
-        color.rgb = kd3 * (lambert + 0.01);
+
+        vec3 kd3 = texture(TextureImage3, vec2(U, V)).rgb;
+
+        // vetor halfway
+        vec4 h = normalize(v + l);
+
+        // componente especular
+        float specularStrength = 0.5;
+        float shininess = 32.0;
+        float specular = pow(max(dot(n, h), 0.0), shininess);
+
+        // cor especular
+        vec3 specularColor = specularStrength * specular * vec3(1.0, 1.0, 1.0); // Ajuste a cor do brilho especular
+
+        float lambert = max(0.0, dot(n, l));
+        color.rgb = kd3 * (lambert + 0.01) + specularColor;
     }
 
 
