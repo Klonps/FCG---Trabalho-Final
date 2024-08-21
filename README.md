@@ -22,6 +22,9 @@ Durante o desenvolvimento, aplicamos os seguintes conceitos de Computação Grá
 5. **Texturização:** Aplicamos texturas às superfícies dos objetos para adicionar detalhes visuais.
 6. **Movimentação e Interação:** Configuramos a movimentação da câmera e a interação com os objetos usando o teclado e o mouse.
 
+## Uso de ChatGPT ou outras ferramentes
+O ChatGPT foi consultado sobre dúvidas de erros no código e como fazer os pontos intermediários da movimentação dos zumbis. Para tentar corrigir erros no código, não foi tão eficiente e gerou códigos que não funcionavam. Porém para tirar algumas dúvidas de que caminho seguir em relação a certos requisitos foi positivo.
+
 ## Imagens do Funcionamento da Aplicação
 
 ![imagem 1](https://github.com/Klonps/FCG---Trabalho-Final/blob/main/Laboratorio_5_Codigo_Fonte/data/imagem(1).png)
