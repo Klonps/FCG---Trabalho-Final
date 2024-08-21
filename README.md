@@ -27,9 +27,9 @@ O ChatGPT foi consultado sobre dúvidas de erros no código e como fazer os pont
 
 ## Imagens do Funcionamento da Aplicação
 
-![imagem 1](https://github.com/Klonps/FCG---Trabalho-Final/blob/main/Laboratorio_5_Codigo_Fonte/data/imagem(1).png)
+![imagem 1](https://github.com/Klonps/FCG---Trabalho-Final/blob/main/Codigo%20Fonte/data/imagem(1).png)
 
-![imagem 2)](https://github.com/Klonps/FCG---Trabalho-Final/blob/main/Laboratorio_5_Codigo_Fonte/data/imagem(2).png)
+![imagem 2)](https://github.com/Klonps/FCG---Trabalho-Final/blob/main/Codigo%20Fonte/data/imagem(2).png)
 
 ## Manual de Utilização
 
